@@ -27,7 +27,7 @@ float mdb(vec4 uv) {
     vec2 c = uv.zw;
     vec2 z = uv.xy;
     vec2 dz = vec2(0.);
-    int i = 0, mi = 10;
+    int i = 0, mi = 30;
     for (i = 0; i < mi; i++) {
         z = cmul(z, z) + c;
         if (length(z) > 6400.) break;
@@ -35,48 +35,34 @@ float mdb(vec4 uv) {
     return log(length(z)) / pow(2.5, float(i));
 }
 
-float rayd(vec2 uv) {
+vec3 raym(vec2 uv) {
     vec3 rd = normalize(vec3(uv, 1.));
-    vec3 ro = vec3(0., 0., -4.);
+    vec3 ro = vec3(0., 0., -3.);
     float d = 0., dd;
     for (int i = 0; i < 70; i++) {
-        vec4 crd = vec4(0.3, ro + rd * d);
+        vec4 crd = vec4(0.1, ro + rd * d);
         crd.xz = rot(crd.xz, time);
         crd.yz = rot(crd.yz, .7 * time);
         dd = mdb(crd);
         d += dd;
     }
-    return d;
-}
 
-vec3 rnrm(vec2 uv) {
-    float d = 0.00001;
-    float dst = rayd(uv), dstx = rayd(vec2(uv.x + d, uv.y)), dsty = rayd(vec2(uv.x, uv.y + d));
-    vec3 nrm = vec3(dst - dstx, dst - dsty, d);
-    return normalize(nrm);
-}
+    vec4 crd = vec4(0.0, ro + rd * d);
+    crd.xz = rot(crd.xz, time);
+    crd.yz = rot(crd.yz, .7 * time);
+    float eps = 0.001;
+    vec3 nrm = normalize(vec3(
+                mdb(crd + vec4(eps, 0., 0., 0.)) - mdb(crd - vec4(eps, 0., 0., 0.)),
+                mdb(crd + vec4(0., eps, 0., 0.)) - mdb(crd - vec4(0., eps, 0., 0.)),
+                mdb(crd + vec4(0., 0., eps, 0.)) - mdb(crd - vec4(0., 0., eps, 0.))
+            ));
 
-vec3 raycol(vec2 uv) {
-    vec3 rd = normalize(vec3(uv, 1.));
-    vec3 ro = vec3(0., 0., -4.);
-    float d = 0., dd;
-    for (int i = 0; i < 40; i++) {
-        vec4 crd = vec4(0.3, ro + rd * d);
-        crd.xz = rot(crd.xz, time);
-        crd.yz = rot(crd.yz, .7 * time);
-        dd = mdb(crd);
-        d += dd;
-    }
-    vec3 col = vec3((dd < 0.1) ? 1. : 0.);
-    vec3 nrm = rnrm(uv);
-    float bright = clamp(dot(nrm, vec3(-.5, -.5, -.5)) * .5, 0., 1.) * .7 + .3;
-    col *= bright;
-    return col;
+    return (dd > .2) ? vec3(0.) : (vec3(0.3 + 0.7 * clamp(dot(nrm, normalize(vec3(1.))), 0., 1.)));
 }
 
 void main() {
     vec2 uv = (gl_FragCoord.xy * 2 - resolution.xy) / min(resolution.x, resolution.y);
 
-    vec3 col = raycol(uv);
+    vec3 col = raym(uv);
     fragCol = vec4(col, 1.);
 }
