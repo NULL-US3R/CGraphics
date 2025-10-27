@@ -27,8 +27,8 @@ GLuint makeshader(char * name, GLuint type){
 
 GLuint makeprog(){
     GLuint prog = glCreateProgram();
-    GLuint vsh = makeshader("./1.vert", GL_VERTEX_SHADER);
-    GLuint fsh = makeshader("./1.frag", GL_FRAGMENT_SHADER);
+    GLuint vsh = makeshader("./shaders/1.vert", GL_VERTEX_SHADER);
+    GLuint fsh = makeshader("./shaders/1.frag", GL_FRAGMENT_SHADER);
     glAttachShader(prog,vsh);
     glAttachShader(prog,fsh);
     glLinkProgram(prog);
