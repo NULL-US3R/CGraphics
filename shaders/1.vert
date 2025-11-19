@@ -1,6 +1,9 @@
 #version 460
-layout(location=0) in vec3 pos;
+layout(location = 0) in vec3 vertPos;
 
-void main(){
-    gl_Position = vec4(pos,1.);
+layout(location = 3) uniform ivec3 rotation;
+layout(location = 4) uniform ivec3 globalPosition;
+
+void main() {
+    gl_Position = vec4(vertPos, 1.);
 }
