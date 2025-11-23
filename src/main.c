@@ -68,8 +68,20 @@ void load_model_to_gpu(model * m){
 void draw_model(model * m){
 	glBindVertexArray(m->vao);
 	glUseProgram(m->prog);
+	glUniform3f(3,m->rotation[0],m->rotation[1],m->rotation[2]);
+	glUniform3f(4,m->position[0],m->position[1],m->position[2]);
 	glDrawArrays(GL_TRIANGLES, 0, m->mesh_length);
 	glBindVertexArray(0);
+}
+
+void draw_entity(entity * e){
+	draw_model(e->model);
+}
+
+void draw_group(entity_group * gr){
+	for(size_t i=0; i<gr->length; i++){
+		draw_entity(gr->arr[i]);
+	}
 }
 
 int main(){
@@ -98,16 +110,6 @@ int main(){
     flat1.prog = p1;
     load_model_to_gpu(&flat1);
 
-
-    // GLuint vbo;
-    // glGenBuffers(1, &vbo);
-    // glBindBuffer(GL_ARRAY_BUFFER,vbo);
-    // glBufferData(GL_ARRAY_BUFFER,sizeof(points),points,GL_STATIC_DRAW);
-    // glVertexAttribPointer(0,3,GL_FLOAT,0,0,0);
-    // glEnableVertexAttribArray(0);
-
-    // GLuint prog = makeprog("./shaders/1.vert", "./shaders/1.frag");
-
     glUseProgram(p1);
 
     {
@@ -116,6 +118,9 @@ int main(){
         glUniform2i(0,w_w,w_h);
         glViewport(0, 0, w_w,w_h);
     }
+
+    extern entity_group all;
+    init();
 
     SDL_Event e;
     uint8_t run=1;
@@ -136,13 +141,14 @@ int main(){
                 glViewport(0, 0, w_w,w_h);
             }
         }
+        flat1.rotation[2] += 1e-2;
+        flat1.position[2] += 1e-2;
+        update_group(&all);
         glUniform1f(1,(float)SDL_GetTicks()/1000.);
-
-
         glClearColor(0,0,0,1);
         glClear(GL_COLOR_BUFFER_BIT);
-        // glDrawArrays(GL_TRIANGLES, 0, 6);
         draw_model(&flat1);
+        draw_group(&all);
         SDL_GL_SwapWindow(w);
     }
     SDL_DestroyWindow(w);
