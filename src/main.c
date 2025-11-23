@@ -142,6 +142,7 @@ int main(){
             }
         }
         flat1.rotation[2] += 1e-2;
+        flat1.rotation[1] += 1e-2;
         flat1.position[2] += 1e-2;
         update_group(&all);
         glUniform1f(1,(float)SDL_GetTicks()/1000.);

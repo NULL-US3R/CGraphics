@@ -19,5 +19,5 @@ void main() {
 
     o += globalPosition;
 
-    gl_Position = vec4(o.x, o.y, 0., o.z);
+    gl_Position = vec4(o.x, o.y, 1., o.z);
 }
