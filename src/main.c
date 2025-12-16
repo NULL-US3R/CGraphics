@@ -53,24 +53,53 @@ GLuint makeprog(char * vname, char * fname){
 }
 
 void load_model_to_gpu(model * m){
+	glActiveTexture(GL_TEXTURE0);
+	glGenTextures(1, &m->texture);
+	glBindTexture(GL_TEXTURE_2D, m->texture);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D,0, GL_RGB, m->texture_src->w, m->texture_src->h, 0, GL_RGB, GL_UNSIGNED_BYTE, m->texture_src->data);
+	glBindTexture(GL_TEXTURE_2D,0);
+
 	glGenVertexArrays(1,&m->vao);
 	glBindVertexArray(m->vao);
-	GLuint vbo;
+	GLuint vbo, ebo, tex;
 	glGenBuffers(1,&vbo);
+	glGenBuffers(1,&ebo);
+	glGenBuffers(1,&tex);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, m->mesh_length*sizeof(float), m->mesh, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, m->verts_length*sizeof(float), m->verts, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m->faces_length*sizeof(unsigned int), m->faces, GL_STATIC_DRAW);
+
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, tex);
+	glBufferData(GL_ARRAY_BUFFER, m->tex_length*sizeof(float), m->tex, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+
 	glBindVertexArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void draw_model(model * m){
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m->texture);
 	glBindVertexArray(m->vao);
+
 	glUseProgram(m->prog);
+	glUniform1i(glGetUniformLocation(m->prog,"tex1"),0);
 	glUniform3f(3,m->rotation[0],m->rotation[1],m->rotation[2]);
 	glUniform3f(4,m->position[0],m->position[1],m->position[2]);
-	glDrawArrays(GL_TRIANGLES, 0, m->mesh_length);
+
+	glDrawElements(GL_TRIANGLES, m->faces_length, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }
 
@@ -84,6 +113,28 @@ void draw_group(entity_group * gr){
 	}
 }
 
+p6image * loadp6(char * name){
+	p6image * out = malloc(sizeof(p6image));
+	FILE * f = fopen(name, "r");
+	char buf[80];
+	fgets(buf,80,f);
+	if(buf[0]=='P'&&buf[1]=='6'){
+		fgets(buf,80,f);
+		out->w = atoi(buf);
+		size_t i=0;
+		while(buf[i]!=' '){
+			i++;
+		}
+		i++;
+		out->h = atoi(buf+i);
+		//printf("w:%lu h:%lu\n",out->w, out->h);
+		out->data = malloc(out->w*out->h*3);
+		fread(out->data, 1, out->w*out->h*3, f);
+	}
+	fclose(f);
+	return out;
+}
+
 int main(){
     SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
     SDL_Init(SDL_INIT_VIDEO);
@@ -92,21 +143,48 @@ int main(){
     SDL_GLContext ctx = SDL_GL_CreateContext(w);
     glewInit();
 
-    float points[18] = {
+    float points[24] = {
+        -1,-1,1,
+        1,-1,1,
+        -1,1,1,
+        1,1,1,
         -1,-1,-1,
         1,-1,-1,
-        1,1,-1,
-
-        -1,-1,-1,
         -1,1,-1,
-        1,1,-1,
+        1,1,-1
     };
+
+    unsigned int flats[36] = {
+    	0,1,2,
+        1,2,3,
+
+        4,5,6,
+        5,6,7
+    };
+
+    float texes[16] = {
+	    0,0,
+	    1,0,
+	    0,1,
+	    1,1,
+		0,0,
+	    1,0,
+	    0,1,
+	    1,1
+    };
+
+    p6image * im1 = loadp6("./textures/tex1.ppm");
 
     GLuint p1 = makeprog("./shaders/1.vert", "./shaders/1.frag");;
 
     model flat1 = {0};
-    flat1.mesh = points;
-    flat1.mesh_length = 18;
+    flat1.texture_src=im1;
+    flat1.verts = points;
+    flat1.verts_length = 24;
+    flat1.tex = texes;
+    flat1.tex_length = 16;
+    flat1.faces = flats;
+    flat1.faces_length = 36;
     flat1.prog = p1;
     load_model_to_gpu(&flat1);
 
@@ -120,6 +198,8 @@ int main(){
     }
 
     extern entity_group all;
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glEnable(GL_DEPTH_TEST);
     init();
 
     SDL_Event e;
@@ -147,6 +227,7 @@ int main(){
         update_group(&all);
         glUniform1f(1,(float)SDL_GetTicks()/1000.);
         glClearColor(0,0,0,1);
+        glClear(GL_DEPTH_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT);
         draw_model(&flat1);
         draw_group(&all);

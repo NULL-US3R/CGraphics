@@ -1,8 +1,12 @@
 #version 460
 layout(location = 0) in vec3 vertPos;
+layout(location = 1) in vec2 texCrd;
 
 layout(location = 3) uniform vec3 rotation;
 layout(location = 4) uniform vec3 globalPosition;
+
+out vec3 oPos;
+out vec2 oTexPos;
 
 //x*sin(b)+y*cos(b)
 //x*cos(b)-y*sin(b)
@@ -20,4 +24,6 @@ void main() {
     o += globalPosition;
 
     gl_Position = vec4(o.x, o.y, 1., o.z);
+    oPos = vec3(o.x, o.y, 1.);
+    oTexPos = texCrd;
 }

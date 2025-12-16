@@ -1,9 +1,16 @@
 #include <GL/glew.h>
 
+typedef struct p6image {
+	size_t w,h;
+	uint8_t * data;
+} p6image;
+
 typedef struct model{
+	p6image * texture_src;
 	GLuint vao, prog; //если не знаешь что это - не трогай
-	size_t mesh_length;
-	float * mesh;
+	size_t verts_length, faces_length, tex_length;
+	float * verts, * tex;
+	unsigned int * faces, texture;
 	float rotation[3]; //вокруг осей xyz по порядку
 	float position[3]; //ну тут думаю понятно
 }model;
