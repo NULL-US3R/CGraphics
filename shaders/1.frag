@@ -14,6 +14,6 @@ uniform sampler2D tex1;
 
 void main() {
     vec2 uv = (gl_FragCoord.xy * 2 - resolution.xy) / min(resolution.x, resolution.y);
-
-    fragCol = texture(tex1, oTexPos).yzxw;
+    vec3 col = texture(tex1, oTexPos).yzx;
+    fragCol = vec4(col, 1.);
 }

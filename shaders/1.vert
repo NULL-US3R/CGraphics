@@ -2,6 +2,7 @@
 layout(location = 0) in vec3 vertPos;
 layout(location = 1) in vec2 texCrd;
 
+layout(location = 0) uniform ivec2 resolution;
 layout(location = 3) uniform vec3 rotation;
 layout(location = 4) uniform vec3 globalPosition;
 
@@ -16,6 +17,7 @@ vec2 rot(vec2 uv, float a) {
 }
 
 void main() {
+    float ar = float(resolution.y) / float(resolution.x);
     vec3 o = vertPos;
     o.yz = rot(o.yz, rotation.x);
     o.xz = rot(o.xz, rotation.y);
@@ -23,7 +25,7 @@ void main() {
 
     o += globalPosition;
 
-    gl_Position = vec4(o.x, o.y, 1., o.z);
-    oPos = vec3(o.x, o.y, 1.);
+    gl_Position = vec4(o.x, o.y / ar, -tanh(o.z), o.z);
+    oPos = o;
     oTexPos = texCrd;
 }

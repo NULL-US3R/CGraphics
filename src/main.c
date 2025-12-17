@@ -158,6 +158,18 @@ int main(){
     	0,1,2,
         1,2,3,
 
+        0,1,4,
+        1,4,5,
+
+        0,2,4,
+        2,4,6,
+
+        1,3,5,
+        3,5,7,
+
+        2,3,6,
+        3,6,7,
+
         4,5,6,
         5,6,7
     };
@@ -167,10 +179,11 @@ int main(){
 	    1,0,
 	    0,1,
 	    1,1,
+
+		1,1,
+		0,1,
+		1,0,
 		0,0,
-	    1,0,
-	    0,1,
-	    1,1
     };
 
     p6image * im1 = loadp6("./textures/tex1.ppm");
@@ -186,6 +199,7 @@ int main(){
     flat1.faces = flats;
     flat1.faces_length = 36;
     flat1.prog = p1;
+    flat1.position[2]=5.;
     load_model_to_gpu(&flat1);
 
     glUseProgram(p1);
@@ -221,14 +235,14 @@ int main(){
                 glViewport(0, 0, w_w,w_h);
             }
         }
+        flat1.rotation[0] += 1e-2;
         flat1.rotation[2] += 1e-2;
         flat1.rotation[1] += 1e-2;
-        flat1.position[2] += 1e-2;
+        // flat1.position[2] += 1e-2;
         update_group(&all);
         glUniform1f(1,(float)SDL_GetTicks()/1000.);
         glClearColor(0,0,0,1);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         draw_model(&flat1);
         draw_group(&all);
         SDL_GL_SwapWindow(w);
