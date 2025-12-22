@@ -1,5 +1,11 @@
 #include <GL/glew.h>
 
+#define CAM_FORWARD 0x1
+#define CAM_BACKWARD 0x2
+#define CAM_RIGHT 0x4
+#define CAM_LEFT 0x8
+
+
 typedef struct p6image {
 	size_t w,h;
 	uint8_t * data;
@@ -14,6 +20,11 @@ typedef struct model{
 	float rotation[3]; //вокруг осей xyz по порядку
 	float position[3]; //ну тут думаю понятно
 }model;
+
+typedef struct camera{
+	float rotation[3];
+	float position[3];
+}camera;
 
 typedef struct entity{
 	model * model;
@@ -31,5 +42,7 @@ typedef struct entity_group{
 void add_to_group(entity_group * group, entity * e);
 
 void update_group(entity_group * group);
+
+void update_cam();
 
 void init();

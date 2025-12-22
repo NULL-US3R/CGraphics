@@ -1,9 +1,16 @@
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_events.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glew.h>
 #include "./engine.h"
+
+extern entity_group all;
+extern camera cam1;
+extern uint64_t current_actions;
+
+
 
 char * fromfile(char * name){
     FILE * f = fopen(name, "r");
@@ -98,6 +105,9 @@ void draw_model(model * m){
 	glUniform1i(glGetUniformLocation(m->prog,"tex1"),0);
 	glUniform3f(3,m->rotation[0],m->rotation[1],m->rotation[2]);
 	glUniform3f(4,m->position[0],m->position[1],m->position[2]);
+
+	glUniform3f(5,cam1.position[0],cam1.position[1],cam1.position[2]);
+	glUniform3f(6,cam1.rotation[0],cam1.rotation[1],cam1.rotation[2]);
 
 	glDrawElements(GL_TRIANGLES, m->faces_length, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
@@ -211,22 +221,53 @@ int main(){
         glViewport(0, 0, w_w,w_h);
     }
 
-    extern entity_group all;
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST);
     init();
 
     SDL_Event e;
     uint8_t run=1;
+
     while(run){
         while(SDL_PollEvent(&e)){
             if(e.type == SDL_EVENT_QUIT){
                 run=0;
             }
             if(e.type == SDL_EVENT_KEY_DOWN){
-                if(e.key.key == SDLK_ESCAPE){
-                    run=0;
-                }
+	            switch (e.key.key) {
+		            case SDLK_ESCAPE:
+						run=0;
+						break;
+					case SDLK_W:
+						current_actions |= CAM_FORWARD;
+						break;
+					case SDLK_S:
+						current_actions |= CAM_BACKWARD;
+						break;
+					case SDLK_D:
+						current_actions |= CAM_RIGHT;
+						break;
+					case SDLK_A:
+						current_actions |= CAM_LEFT;
+						break;
+
+	            }
+            }
+            if(e.type == SDL_EVENT_KEY_UP){
+           		switch (e.key.key) {
+					case SDLK_W:
+						current_actions &= ~CAM_FORWARD;
+						break;
+					case SDLK_S:
+						current_actions &= ~CAM_BACKWARD;
+						break;
+					case SDLK_D:
+						current_actions &= ~CAM_RIGHT;
+						break;
+					case SDLK_A:
+						current_actions &= ~CAM_LEFT;
+						break;
+	            }
             }
             if(e.type == SDL_EVENT_WINDOW_RESIZED){
                 int w_w,w_h;
@@ -236,9 +277,10 @@ int main(){
             }
         }
         flat1.rotation[0] += 1e-2;
-        flat1.rotation[2] += 1e-2;
-        flat1.rotation[1] += 1e-2;
+        flat1.rotation[2] += 3e-2;
+        flat1.rotation[1] += 2e-2;
         // flat1.position[2] += 1e-2;
+        update_cam();
         update_group(&all);
         glUniform1f(1,(float)SDL_GetTicks()/1000.);
         glClearColor(0,0,0,1);
