@@ -1,5 +1,7 @@
 #include "./engine.h"
 #include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
 
 entity_group all = {0};
 camera cam1 = {0};
@@ -25,20 +27,43 @@ void update_group(entity_group * group){
 	}
 }
 
+//cam.xy
+
 void update_cam(){
 	float speed = .1;
+	// if(current_actions&CAM_FORWARD){
+	// 	cam1.position[2]+=speed;
+	// }
+	// if(current_actions&CAM_BACKWARD){
+	// 	cam1.position[2]-=speed;
+	// }
+	// if(current_actions&CAM_RIGHT){
+	// 	cam1.position[0]+=speed;
+	// }
+	// if(current_actions&CAM_LEFT){
+	// 	cam1.position[0]-=speed;
+	// }
+
+	float d[2] = {0};
 	if(current_actions&CAM_FORWARD){
-		cam1.position[2]+=speed;
+		d[1]=1;
 	}
 	if(current_actions&CAM_BACKWARD){
-		cam1.position[2]-=speed;
+		d[1]=-1;
 	}
 	if(current_actions&CAM_RIGHT){
-		cam1.position[0]+=speed;
+		d[0]=1;
 	}
 	if(current_actions&CAM_LEFT){
-		cam1.position[0]-=speed;
+		d[0]=-1;
 	}
+	float nd[2] = {0};
+	nd[0] = d[0] * cos(cam1.rotation[1]) - d[1] * sin(cam1.rotation[1]);
+	nd[1] = d[0] * sin(cam1.rotation[1]) + d[1] * cos(cam1.rotation[1]);
+
+	cam1.position[2]+=speed*nd[1];
+	cam1.position[0]+=speed*nd[0];
+	printf("x:%f, y:%f, z:%f\n",cam1.position[0],cam1.position[1],cam1.position[2]);
 }
 
 void update(entity * e){ // дописать аргументы по необходимости или использовать external переменные

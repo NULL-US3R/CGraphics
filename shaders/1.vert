@@ -1,4 +1,4 @@
-#version 460
+#version 450
 layout(location = 0) in vec3 vertPos;
 layout(location = 1) in vec2 texCrd;
 
@@ -27,8 +27,9 @@ void main() {
 
     o += globalPosition - camPos;
 
-    o.yz = rot(o.yz, -camRot.x);
     o.xz = rot(o.xz, -camRot.y);
+    o.yz = rot(o.yz, -camRot.x);
+
     o.xy = rot(o.xy, -camRot.z);
 
     gl_Position = vec4(o.x, o.y / ar, -tanh(o.z), o.z);

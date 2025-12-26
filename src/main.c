@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glew.h>
+#include <math.h>
 #include "./engine.h"
 
 extern entity_group all;
@@ -146,15 +147,18 @@ p6image * loadp6(char * name){
 }
 
 int main(){
-    SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
+    //SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window * w = SDL_CreateWindow("fractal", 800,800, SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE);
+    SDL_WarpMouseInWindow(w, 1920./2., 1080./2.);
+    SDL_SetWindowMouseGrab(w, 1);
+    SDL_HideCursor();
 
     SDL_GLContext ctx = SDL_GL_CreateContext(w);
     glewInit();
 
     float points[24] = {
-        -1,-1,1,
+        -5,-5,5,
         1,-1,1,
         -1,1,1,
         1,1,1,
@@ -212,6 +216,19 @@ int main(){
     flat1.position[2]=5.;
     load_model_to_gpu(&flat1);
 
+    model flat2 = {0};
+    flat2.texture_src=im1;
+    flat2.verts = points;
+    flat2.verts_length = 24;
+    flat2.tex = texes;
+    flat2.tex_length = 16;
+    flat2.faces = flats;
+    flat2.faces_length = 36;
+    flat2.prog = p1;
+    flat2.position[2]=5.;
+    flat2.position[1]=5.;
+    load_model_to_gpu(&flat2);
+
     glUseProgram(p1);
 
     {
@@ -232,6 +249,15 @@ int main(){
         while(SDL_PollEvent(&e)){
             if(e.type == SDL_EVENT_QUIT){
                 run=0;
+            }
+            if(e.type == SDL_EVENT_MOUSE_MOTION){
+                cam1.rotation[1] -= e.motion.xrel/100.;
+                if((-M_PI*.5<cam1.rotation[0] && e.motion.yrel<=0) || (M_PI*.5>cam1.rotation[0] && e.motion.yrel>=0)){
+                	cam1.rotation[0] += e.motion.yrel/100.;
+                }
+                int w_w,w_h;
+                SDL_GetWindowSize(w, &w_w, &w_h);
+                SDL_WarpMouseInWindow(w, w_w/2., w_h/2.);
             }
             if(e.type == SDL_EVENT_KEY_DOWN){
 	            switch (e.key.key) {
@@ -276,9 +302,11 @@ int main(){
                 glViewport(0, 0, w_w,w_h);
             }
         }
-        flat1.rotation[0] += 1e-2;
-        flat1.rotation[2] += 3e-2;
-        flat1.rotation[1] += 2e-2;
+        // flat1.rotation[0] += 1e-2;
+        // flat1.rotation[2] += 3e-2;
+        // flat1.rotation[1] += 2e-2;
+        // flat2.rotation[2] += 6e-1;
+        // flat2.rotation[1] += 6e-2;
         // flat1.position[2] += 1e-2;
         update_cam();
         update_group(&all);
@@ -286,6 +314,7 @@ int main(){
         glClearColor(0,0,0,1);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         draw_model(&flat1);
+        draw_model(&flat2);
         draw_group(&all);
         SDL_GL_SwapWindow(w);
     }

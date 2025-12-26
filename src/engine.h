@@ -39,10 +39,14 @@ typedef struct entity_group{
 	entity ** arr;
 }entity_group;
 
+//добавить имбицила к группе
 void add_to_group(entity_group * group, entity * e);
 
+//обновить все сучности сразу в группу
 void update_group(entity_group * group);
 
+//обновить бандикам
 void update_cam();
 
+//инициировать секс
 void init();
