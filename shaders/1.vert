@@ -6,7 +6,7 @@ layout(location = 0) uniform ivec2 resolution;
 layout(location = 3) uniform vec3 rotation;
 layout(location = 4) uniform vec3 globalPosition;
 layout(location = 5) uniform vec3 camPos;
-layout(location = 6) uniform vec3 camRot;
+layout(location = 6) uniform mat3 camRot;
 
 out vec3 oPos;
 out vec2 oTexPos;
@@ -27,11 +27,11 @@ void main() {
 
     o += globalPosition - camPos;
 
-    o.xz = rot(o.xz, -camRot.y);
-    o.yz = rot(o.yz, -camRot.x);
+    // o.xz = rot(o.xz, -camRot.y);
+    // o.yz = rot(o.yz, -camRot.x);
 
-    o.xy = rot(o.xy, -camRot.z);
-
+    // o.xy = rot(o.xy, -camRot.z);
+    o =o*camRot;
     gl_Position = vec4(o.x, o.y / ar, -tanh(o.z), o.z);
     oPos = o;
     oTexPos = texCrd;

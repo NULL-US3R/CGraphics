@@ -108,8 +108,8 @@ void draw_model(model * m){
 	glUniform3f(4,m->position[0],m->position[1],m->position[2]);
 
 	glUniform3f(5,cam1.position[0],cam1.position[1],cam1.position[2]);
-	glUniform3f(6,cam1.rotation[0],cam1.rotation[1],cam1.rotation[2]);
-
+	//glUniform3f(6,cam1.rotation[0],cam1.rotation[1],cam1.rotation[2]);
+	glUniformMatrix3fv(6,1,0,cam1.rot_mat);
 	glDrawElements(GL_TRIANGLES, m->faces_length, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }

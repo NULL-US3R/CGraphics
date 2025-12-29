@@ -24,6 +24,9 @@ typedef struct model{
 typedef struct camera{
 	float rotation[3];
 	float position[3];
+	float tarrget[3];
+	float rot_mat[16];
+	float clip_mat[16];
 }camera;
 
 typedef struct entity{
