@@ -18,6 +18,7 @@ typedef struct model{
 	float * verts, * tex;
 	unsigned int * faces, texture;
 	float rotation[3]; //вокруг осей xyz по порядку
+	float rot_mat[9];
 	float position[3]; //ну тут думаю понятно
 }model;
 
@@ -34,6 +35,8 @@ typedef struct entity{
 	// дописывайте что угодно по желанию
 	// также когда будешь делать логику, подскажи куда А.Ролексу воткнуть коллизию.
 }entity;
+
+void matmul(float * a, float * b, float * o, size_t sr, size_t sm, size_t sc);
 
 void update(entity * e);
 

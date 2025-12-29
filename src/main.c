@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <GL/glew.h>
 #include <math.h>
+#include <string.h>
 #include "./engine.h"
 
 extern entity_group all;
@@ -104,7 +105,43 @@ void draw_model(model * m){
 
 	glUseProgram(m->prog);
 	glUniform1i(glGetUniformLocation(m->prog,"tex1"),0);
-	glUniform3f(3,m->rotation[0],m->rotation[1],m->rotation[2]);
+	//glUniform3f(3,m->rotation[0],m->rotation[1],m->rotation[2]);
+
+	float
+	sinx=sin(m->rotation[0]),
+	siny=sin(m->rotation[1]),
+	sinz=sin(m->rotation[2]),
+
+	cosx=cos(m->rotation[0]),
+	cosy=cos(m->rotation[1]),
+	cosz=cos(m->rotation[2]);
+
+	float xmat[9] = {
+		1,0,0,
+		0,cosx,sinx,
+		0,-sinx,cosx,
+	};
+
+	float ymat[9] = {
+		cosy,0,siny,
+		0,1,0,
+		-siny,0,cosy,
+	};
+
+	float zmat[9] = {
+		cosz,sinz,0,
+		-sinz,cosz,0,
+		0,0,1
+	};
+
+	float mat[9];
+
+	matmul(ymat,zmat,mat,3,3,3);
+	memcpy(zmat, mat, 9*sizeof(float));
+	matmul(xmat,zmat,mat,3,3,3);
+
+	glUniformMatrix3fv(3,1,0,mat);
+
 	glUniform3f(4,m->position[0],m->position[1],m->position[2]);
 
 	glUniform3f(5,cam1.position[0],cam1.position[1],cam1.position[2]);
