@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_video.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -277,6 +278,8 @@ int main(){
 
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST);
+    SDL_GL_SetSwapInterval(0);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 0);
     init();
 
     SDL_Event e;
@@ -339,7 +342,7 @@ int main(){
                 glViewport(0, 0, w_w,w_h);
             }
         }
-        // flat1.rotation[0] += 1e-2;
+        flat1.rotation[0] += 1e-2;
         // flat1.rotation[2] += 3e-2;
         // flat1.rotation[1] += 2e-2;
         // flat2.rotation[2] += 6e-1;
@@ -350,7 +353,7 @@ int main(){
         glUniform1f(1,(float)SDL_GetTicks()/1000.);
         glClearColor(0,0,0,1);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        draw_model(&flat1);
+        draw_model(&flat1); // rendering functions
         draw_model(&flat2);
         draw_group(&all);
         SDL_GL_SwapWindow(w);
