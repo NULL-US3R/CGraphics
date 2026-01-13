@@ -285,6 +285,8 @@ int main(){
     SDL_Event e;
     uint8_t run=1;
 
+    uint64_t rcap=10, rstart = SDL_GetTicks();
+
     while(run){
         while(SDL_PollEvent(&e)){
             if(e.type == SDL_EVENT_QUIT){
@@ -342,14 +344,18 @@ int main(){
                 glViewport(0, 0, w_w,w_h);
             }
         }
-        flat1.rotation[0] += 1e-2;
-        // flat1.rotation[2] += 3e-2;
-        // flat1.rotation[1] += 2e-2;
-        // flat2.rotation[2] += 6e-1;
-        // flat2.rotation[1] += 6e-2;
-        // flat1.position[2] += 1e-2;
-        update_cam();
-        update_group(&all);
+        if(SDL_GetTicks()-rstart > rcap){
+            rstart = SDL_GetTicks();
+            flat1.rotation[0] += 1e-2;
+            // flat1.rotation[2] += 3e-2;
+            // flat1.rotation[1] += 2e-2;
+            // flat2.rotation[2] += 6e-1;
+            // flat2.rotation[1] += 6e-2;
+            // flat1.position[2] += 1e-2;
+            update_group(&all);
+            update_cam_pos();
+        }
+        update_cam_rot();
         glUniform1f(1,(float)SDL_GetTicks()/1000.);
         glClearColor(0,0,0,1);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);

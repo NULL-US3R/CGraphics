@@ -52,7 +52,8 @@ void add_to_group(entity_group * group, entity * e);
 void update_group(entity_group * group);
 
 //обновить бандикам
-void update_cam();
+void update_cam_pos();
+void update_cam_rot();
 
 //инициировать секс
 void init();

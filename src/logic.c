@@ -38,21 +38,24 @@ void matmul(float * a, float * b, float * o, size_t sr, size_t sm, size_t sc){
 	}
 }
 
-void update_cam(){
-	float speed = .1;
-	// if(current_actions&CAM_FORWARD){
-	// 	cam1.position[2]+=speed;
-	// }
-	// if(current_actions&CAM_BACKWARD){
-	// 	cam1.position[2]-=speed;
-	// }
-	// if(current_actions&CAM_RIGHT){
-	// 	cam1.position[0]+=speed;
-	// }
-	// if(current_actions&CAM_LEFT){
-	// 	cam1.position[0]-=speed;
-	// }
+void update_cam_rot(){
+	float cosy=cos(cam1.rotation[1]),siny=sin(cam1.rotation[1]);
+	float ymat[9] = {
+		cosy,0,siny,
+		0,   1,   0,
+		-siny,0,cosy
+	};
+	float cosx=cos(cam1.rotation[0]),sinx=sin(cam1.rotation[0]);
+	float xmat[9] = {
+		1,0,0,
+		0,cosx,sinx,
+		0,-sinx,cosx,
+	};
+	matmul(xmat, ymat, cam1.rot_mat, 3, 3, 3);
+}
 
+void update_cam_pos(){
+	float speed = .1;
 	float d[2] = {0};
 	if(current_actions&CAM_FORWARD){
 		d[1]=1;
@@ -72,28 +75,6 @@ void update_cam(){
 
 	cam1.position[2]+=speed*nd[1];
 	cam1.position[0]+=speed*nd[0];
-
-	float cosy=cos(cam1.rotation[1]),siny=sin(cam1.rotation[1]);
-	float ymat[9] = {
-		cosy,0,siny,
-		0,   1,   0,
-		-siny,0,cosy
-	};
-	float cosx=cos(cam1.rotation[0]),sinx=sin(cam1.rotation[0]);
-	float xmat[9] = {
-		1,0,0,
-		0,cosx,sinx,
-		0,-sinx,cosx,
-	};
-	matmul(xmat, ymat, cam1.rot_mat, 3, 3, 3);
-	// cam1.rot_mat[0]=cos(cam1.rotation[1]);
-	// cam1.rot_mat[2]=sin(cam1.rotation[1]);
-	// cam1.rot_mat[4]=1;
-	// cam1.rot_mat[6]=-cam1.rot_mat[2];
-	// cam1.rot_mat[8]=cam1.rot_mat[0];
-	//cam1.rot_mat[15]=1;
-
-	//printf("x:%f, y:%f, z:%f\n",cam1.position[0],cam1.position[1],cam1.position[2]);
 }
 
 void update(entity * e){ // дописать аргументы по необходимости или использовать external переменные
