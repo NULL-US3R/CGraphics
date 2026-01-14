@@ -1,12 +1,65 @@
 #include "./engine.h"
+#include <string.h>
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#define CGLTF_IMPLEMENTATION
+#include "./cgltf/cgltf.h"
 
 entity_group all = {0};
 camera cam1 = {0};
 
 uint64_t current_actions = 0;
+
+model * load_model(char * filename){
+    //printf("loading %s:\n",filename);
+    cgltf_options opt = {0};
+    cgltf_data* data = NULL;
+    cgltf_result res = cgltf_parse_file(&opt, filename, &data);
+
+    if(res != cgltf_result_success){
+        printf("unable to load file\n");
+    }
+    cgltf_load_buffers(&opt, data, filename);
+    cgltf_primitive * p = &data->meshes[0].primitives[0];
+
+    model * m = malloc(sizeof(model));
+    memset(m,0,sizeof(model));
+
+    //printf("parsing attributes\n");
+
+    for(size_t i=0; i<p->attributes_count; i++){
+        if(p->attributes[i].type == cgltf_attribute_type_position){
+            cgltf_accessor * acc = p->attributes[i].data;
+            m->verts_length = acc->count*3;
+            m->verts = malloc(m->verts_length*sizeof(float));
+            cgltf_accessor_unpack_floats(acc, m->verts, m->verts_length);
+        }
+        if(p->attributes[i].type == cgltf_attribute_type_texcoord){
+            cgltf_accessor * acc = p->attributes[i].data;
+            m->tex_length = acc->count*2;
+            m->tex = malloc(m->tex_length*sizeof(float));
+            cgltf_accessor_unpack_floats(acc, m->tex, m->tex_length);
+        }
+    }
+
+    //printf("parsing faces\n");
+
+    m->faces_length = p->indices->count;
+    m->faces = malloc(sizeof(unsigned int) * m->faces_length);
+    cgltf_accessor_unpack_indices(p->indices, m->faces, sizeof(unsigned int), m->faces_length);
+
+    //printf("done, cleaning up\n");
+    memset(m->rotation, 0, sizeof(float)*3);
+    memset(m->position, 0, sizeof(float)*3);
+
+    if(data->images_count>0){
+        printf("%s\n",data->images[0].uri);
+    }
+
+    cgltf_free(data);
+    return m;
+}
 
 void add_to_group(entity_group * group, entity * e){
 	if(group->length==group->cap){
@@ -86,5 +139,9 @@ void init(){
 	for(int i=0; i<3; i++){
 		cam1.rot_mat[3*i+i]=1.;
 	}
-
+	entity * e1 = malloc(sizeof(entity));
+	e1->model = load_model("/home/main/Desktop/graphics/CGraphics/models/1.glb");
+	//printf("adding to group\n");
+	add_to_group(&all, e1);
+	//printf("added to group\n");
 }

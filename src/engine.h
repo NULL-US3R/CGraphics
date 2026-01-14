@@ -1,5 +1,6 @@
 #include <GL/glew.h>
 
+
 #define CAM_FORWARD 0x1
 #define CAM_BACKWARD 0x2
 #define CAM_RIGHT 0x4
@@ -21,6 +22,8 @@ typedef struct model{
 	float rot_mat[9];
 	float position[3]; //ну тут думаю понятно
 }model;
+
+model * load_model(char * filename);
 
 typedef struct camera{
 	float rotation[3];

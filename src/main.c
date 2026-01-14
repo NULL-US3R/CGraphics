@@ -13,7 +13,29 @@ extern entity_group all;
 extern camera cam1;
 extern uint64_t current_actions;
 
+GLuint default_prog;
 
+p6image * loadp6(char * name){
+	p6image * out = malloc(sizeof(p6image));
+	FILE * f = fopen(name, "r");
+	char buf[80];
+	fgets(buf,80,f);
+	if(buf[0]=='P'&&buf[1]=='6'){
+		fgets(buf,80,f);
+		out->w = atoi(buf);
+		size_t i=0;
+		while(buf[i]!=' '){
+			i++;
+		}
+		i++;
+		out->h = atoi(buf+i);
+		//printf("w:%lu h:%lu\n",out->w, out->h);
+		out->data = malloc(out->w*out->h*3);
+		fread(out->data, 1, out->w*out->h*3, f);
+	}
+	fclose(f);
+	return out;
+}
 
 char * fromfile(char * name){
     FILE * f = fopen(name, "r");
@@ -63,6 +85,12 @@ GLuint makeprog(char * vname, char * fname){
 }
 
 void load_model_to_gpu(model * m){
+    if(m->texture_src == NULL){
+        m->texture_src = loadp6("./textures/tex1.ppm");
+    }
+    if(m->prog == 0){
+        m->prog = default_prog;
+    }
 	glActiveTexture(GL_TEXTURE0);
 	glGenTextures(1, &m->texture);
 	glBindTexture(GL_TEXTURE_2D, m->texture);
@@ -97,9 +125,14 @@ void load_model_to_gpu(model * m){
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
 }
 
 void draw_model(model * m){
+    if(m->vao == 0 || m->prog == 0){
+        //then it is not loaded
+        load_model_to_gpu(m);
+    }
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m->texture);
 	glBindVertexArray(m->vao);
@@ -162,26 +195,11 @@ void draw_group(entity_group * gr){
 	}
 }
 
-p6image * loadp6(char * name){
-	p6image * out = malloc(sizeof(p6image));
-	FILE * f = fopen(name, "r");
-	char buf[80];
-	fgets(buf,80,f);
-	if(buf[0]=='P'&&buf[1]=='6'){
-		fgets(buf,80,f);
-		out->w = atoi(buf);
-		size_t i=0;
-		while(buf[i]!=' '){
-			i++;
-		}
-		i++;
-		out->h = atoi(buf+i);
-		//printf("w:%lu h:%lu\n",out->w, out->h);
-		out->data = malloc(out->w*out->h*3);
-		fread(out->data, 1, out->w*out->h*3, f);
-	}
-	fclose(f);
-	return out;
+void print_model(model * m){
+    printf("verts:\n");
+    for(size_t i=0; i<m->verts_length;i+=3){
+        printf("%f,%f,%f\n",m->verts[i],m->verts[i+1],m->verts[i+2]);
+    }
 }
 
 int main(){
@@ -194,6 +212,8 @@ int main(){
 
     SDL_GLContext ctx = SDL_GL_CreateContext(w);
     glewInit();
+
+    default_prog = makeprog("./shaders/1.vert", "./shaders/1.frag");
 
     float points[24] = {
         -5,-5,5,
@@ -240,7 +260,7 @@ int main(){
 
     p6image * im1 = loadp6("./textures/tex1.ppm");
 
-    GLuint p1 = makeprog("./shaders/1.vert", "./shaders/1.frag");;
+    GLuint p1 = default_prog;
 
     model flat1 = {0};
     flat1.texture_src=im1;
@@ -286,6 +306,10 @@ int main(){
     uint8_t run=1;
 
     uint64_t rcap=10, rstart = SDL_GetTicks();
+
+    //print_model(&flat1);
+
+    print_model(all.arr[0]->model);
 
     while(run){
         while(SDL_PollEvent(&e)){

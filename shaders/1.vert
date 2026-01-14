@@ -25,7 +25,7 @@ void main() {
     // o.xz = rot(o.xz, rotation.y);
     // o.xy = rot(o.xy, rotation.z);
 
-    o = rotation*o;
+    o = rotation * o;
 
     o += globalPosition - camPos;
 
@@ -33,7 +33,7 @@ void main() {
     // o.yz = rot(o.yz, -camRot.x);
 
     // o.xy = rot(o.xy, -camRot.z);
-    o =o*camRot;
+    o = o * camRot;
     gl_Position = vec4(o.x, o.y / ar, -tanh(o.z), o.z);
     oPos = o;
     oTexPos = texCrd;
