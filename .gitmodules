@@ -1,0 +1,3 @@
+[submodule "src/cgltf"]
+	path = src/cgltf
+	url = https://github.com/jkuhlmann/cgltf
