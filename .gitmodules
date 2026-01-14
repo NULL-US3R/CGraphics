@@ -1,3 +1,6 @@
 [submodule "src/cgltf"]
 	path = src/cgltf
 	url = https://github.com/jkuhlmann/cgltf
+[submodule "src/stb"]
+	path = src/stb
+	url = https://github.com/nothings/stb
