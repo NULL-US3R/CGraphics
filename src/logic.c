@@ -4,7 +4,9 @@
 #include <math.h>
 #include <stdio.h>
 #define CGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
 #include "./cgltf/cgltf.h"
+#include "./stb/stb_image.h"
 
 entity_group all = {0};
 camera cam1 = {0};
@@ -53,8 +55,16 @@ model * load_model(char * filename){
     memset(m->rotation, 0, sizeof(float)*3);
     memset(m->position, 0, sizeof(float)*3);
 
-    if(data->images_count>0){
-        printf("%s\n",data->images[0].uri);
+
+    printf("%ld\n",data->images_count);
+    if(data->textures_count>0){
+        uint8_t * img_dat = data->textures[0].image->buffer_view->buffer->data + data->textures[0].image->buffer_view->offset;
+        int x,y,n;
+        p6image * img = malloc(sizeof(p6image));
+        img->data = stbi_load_from_memory(img_dat, data->textures[0].image->buffer_view->buffer->size-data->textures[0].image->buffer_view->offset, &x, &y, &n, 3);
+        img->w = x;
+        img->h = y;
+        m->texture_src = img;
     }
 
     cgltf_free(data);
@@ -140,8 +150,6 @@ void init(){
 		cam1.rot_mat[3*i+i]=1.;
 	}
 	entity * e1 = malloc(sizeof(entity));
-	e1->model = load_model("/home/main/Desktop/graphics/CGraphics/models/1.glb");
-	//printf("adding to group\n");
+	e1->model = load_model("/home/main/Desktop/graphics/CGraphics/models/2.glb");
 	add_to_group(&all, e1);
-	//printf("added to group\n");
 }

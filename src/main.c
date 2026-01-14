@@ -305,11 +305,11 @@ int main(){
     SDL_Event e;
     uint8_t run=1;
 
-    uint64_t rcap=10, rstart = SDL_GetTicks();
+    uint64_t rcap=5, rstart = SDL_GetTicks();
 
     //print_model(&flat1);
 
-    print_model(all.arr[0]->model);
+    //print_model(all.arr[0]->model);
 
     while(run){
         while(SDL_PollEvent(&e)){
