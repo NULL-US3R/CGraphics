@@ -67,6 +67,10 @@ model * load_model(char * filename){
         m->texture_src = img;
     }
 
+    if(data->animations_count>0){
+        printf("model %s has %lu animations\n",filename,data->animations_count);
+    }
+
     cgltf_free(data);
     return m;
 }
@@ -149,7 +153,15 @@ void init(){
 	for(int i=0; i<3; i++){
 		cam1.rot_mat[3*i+i]=1.;
 	}
+
+	entity * e2 = malloc(sizeof(entity));
+	e2->model = load_model("/home/main/Desktop/graphics/CGraphics/models/2.glb");
+	add_to_group(&all, e2);
+	e2->model->position[0]=10;
+
 	entity * e1 = malloc(sizeof(entity));
-	e1->model = load_model("/home/main/Desktop/graphics/CGraphics/models/2.glb");
+	e1->model = load_model("/home/main/Desktop/graphics/CGraphics/models/3.glb");
 	add_to_group(&all, e1);
+	e1->model->rotation[0]=1;
+	e1->model->position[0]=-10;
 }

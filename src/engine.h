@@ -1,6 +1,5 @@
 #include <GL/glew.h>
 
-
 #define CAM_FORWARD 0x1
 #define CAM_BACKWARD 0x2
 #define CAM_RIGHT 0x4
