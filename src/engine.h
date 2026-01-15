@@ -16,6 +16,12 @@ typedef struct model{
 	GLuint vao, prog; //если не знаешь что это - не трогай
 	size_t verts_length, faces_length, tex_length;
 	float * verts, * tex;
+	int * bone_ids;
+	float * bone_weights;
+	size_t num_bones;
+	float * bones[4][4];
+	size_t num_frames;
+	float ** frames[4][4]; //кости во времени
 	unsigned int * faces, texture;
 	float rotation[3]; //вокруг осей xyz по порядку
 	float rot_mat[9];

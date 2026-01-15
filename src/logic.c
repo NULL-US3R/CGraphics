@@ -56,7 +56,7 @@ model * load_model(char * filename){
     memset(m->position, 0, sizeof(float)*3);
 
 
-    printf("%ld\n",data->images_count);
+    //printf("%ld\n",data->images_count);
     if(data->textures_count>0){
         uint8_t * img_dat = data->textures[0].image->buffer_view->buffer->data + data->textures[0].image->buffer_view->offset;
         int x,y,n;
