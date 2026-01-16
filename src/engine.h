@@ -11,17 +11,24 @@ typedef struct p6image {
 	uint8_t * data;
 } p6image;
 
+typedef struct animation{
+    size_t num_bones;
+    size_t num_frames;
+	float (* frames)[4][4]; //кости во времени
+	int * timestamps; // 1 на каждый фрейм
+}animation;
+
 typedef struct model{
 	p6image * texture_src;
 	GLuint vao, prog; //если не знаешь что это - не трогай
-	size_t verts_length, faces_length, tex_length;
+	size_t verts_length, faces_length, tex_length,bone_id_length,bone_weight_length;
 	float * verts, * tex;
-	int * bone_ids;
-	float * bone_weights;
+	int * bone_ids; // ivec4[]
+	float * bone_weights; // vec4[]
 	size_t num_bones;
-	float * bones[4][4];
-	size_t num_frames;
-	float ** frames[4][4]; //кости во времени
+	float (* bones)[4][4];
+	size_t anim_count;
+	animation * anims;
 	unsigned int * faces, texture;
 	float rotation[3]; //вокруг осей xyz по порядку
 	float rot_mat[9];

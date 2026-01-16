@@ -1,6 +1,8 @@
 #version 450
 layout(location = 0) in vec3 vertPos;
 layout(location = 1) in vec2 texCrd;
+layout(location = 2) in ivec4 bone_id;
+layout(location = 3) in vec4 bone_weight;
 
 layout(location = 0) uniform ivec2 resolution;
 layout(location = 3) uniform mat3 rotation;

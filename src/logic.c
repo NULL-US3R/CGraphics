@@ -13,6 +13,68 @@ camera cam1 = {0};
 
 uint64_t current_actions = 0;
 
+typedef struct node_float{
+    float val;
+    struct node_float * chil[2];
+}node_float;
+
+void add_node_float(node_float * root, float val){
+    if(val!=root->val){
+        if(val<root->val){
+            if(root->chil[0]==NULL){
+                root->chil[0] = malloc(sizeof(node_float));
+                root->chil[0]->val = val;
+                root->chil[0]->chil[0] = root->chil[0]->chil[0] = NULL;
+            }
+        }
+    }
+}
+
+void mmul4(float * a, float * b, float * o){
+	for(size_t r=0; r<4; r++){
+		for(size_t c=0; c<4; c++){
+			o[4*r+c] = 0;
+			for(size_t m=0; m<4; m++){
+				o[4*r+c] += a[4*r+m]*b[4*m+c];
+			}
+		}
+	}
+}
+
+void print_node(cgltf_node * root, size_t tabs){
+    // for(size_t i=0; i<tabs; i++){
+    //     printf(" ");
+    // }
+    printf("%.20s ",root->name);
+    if(root->has_matrix){
+        printf("+matrix ");
+    }
+    if(root->has_rotation){
+        printf("+rotation ");
+    }
+    if(root->has_translation){
+        printf("+translat ");
+    }
+    if(root->has_scale){
+        printf("+scale ");
+    }
+    printf("\n");
+    // for(size_t i=0; i<4; i++){
+    //     for(size_t j=0; j<tabs; j++){
+    //         printf(" ");
+    //     }
+    //     for(size_t j=0; j<4; j++){
+    //         printf("%.3f ",root->matrix[i*4+j]);
+    //     }
+    //     printf("\n");
+    // }
+
+    for(size_t i=0; i<root->children_count; i++){
+        print_node(root->children[i],tabs+1);
+    }
+
+}
+
 model * load_model(char * filename){
     //printf("loading %s:\n",filename);
     cgltf_options opt = {0};
@@ -43,6 +105,18 @@ model * load_model(char * filename){
             m->tex = malloc(m->tex_length*sizeof(float));
             cgltf_accessor_unpack_floats(acc, m->tex, m->tex_length);
         }
+        if(p->attributes[i].type == cgltf_attribute_type_joints){
+            cgltf_accessor * acc = p->attributes[i].data;
+            m->bone_id_length = acc->count*4;
+            m->bone_ids = malloc(m->bone_id_length*sizeof(int));
+            cgltf_accessor_unpack_indices(acc, m->bone_ids, sizeof(int), m->bone_id_length);
+        }
+        if(p->attributes[i].type == cgltf_attribute_type_weights){
+            cgltf_accessor * acc = p->attributes[i].data;
+            m->bone_weight_length = acc->count*4;
+            m->bone_weights = malloc(m->bone_weight_length*sizeof(float));
+            cgltf_accessor_unpack_floats(acc, m->bone_weights, m->bone_weight_length);
+        }
     }
 
     //printf("parsing faces\n");
@@ -67,8 +141,33 @@ model * load_model(char * filename){
         m->texture_src = img;
     }
 
+
+
+    //walk through joints and compute matrices for animations
     if(data->animations_count>0){
-        printf("model %s has %lu animations\n",filename,data->animations_count);
+        //get all timestamps
+        for(size_t i=0; i<data->animations_count; i++){
+            cgltf_animation * anim = &data->animations[i];
+            for(size_t j=0; j<anim->channels_count; j++){
+                cgltf_animation_channel * chan = &anim->channels[j];
+                size_t numt = chan->sampler->input->count;
+                float times[numt];
+
+                cgltf_accessor_unpack_floats(chan->sampler->input, times, numt);
+                for(size_t k=0; k<numt; k++){
+                    //add to set times[k];
+                }
+            }
+        }
+
+
+        // for(size_t i=0; i<data->animations_count; i++){
+        //     cgltf_animation * anim = &data->animations[i];
+        //     for(size_t j=0; j<anim->channels_count; j++){
+        //         cgltf_animation_channel * chan = &anim->channels[j];
+        //         chan->sampler->
+        //     }
+        // }
     }
 
     cgltf_free(data);
