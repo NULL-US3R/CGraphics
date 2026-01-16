@@ -24,7 +24,18 @@ void add_node_float(node_float * root, float val){
             if(root->chil[0]==NULL){
                 root->chil[0] = malloc(sizeof(node_float));
                 root->chil[0]->val = val;
-                root->chil[0]->chil[0] = root->chil[0]->chil[0] = NULL;
+                root->chil[0]->chil[0] = root->chil[0]->chil[1] = NULL;
+            }else{
+                add_node_float(root->chil[0],val);
+            }
+        }
+        if(val>root->val){
+            if(root->chil[1]==NULL){
+                root->chil[1] = malloc(sizeof(node_float));
+                root->chil[1]->val = val;
+                root->chil[1]->chil[0] = root->chil[0]->chil[1] = NULL;
+            }else{
+                add_node_float(root->chil[1],val);
             }
         }
     }
@@ -254,12 +265,12 @@ void init(){
 	}
 
 	entity * e2 = malloc(sizeof(entity));
-	e2->model = load_model("/home/main/Desktop/graphics/CGraphics/models/2.glb");
+	e2->model = load_model("./models/2.glb");
 	add_to_group(&all, e2);
 	e2->model->position[0]=10;
 
 	entity * e1 = malloc(sizeof(entity));
-	e1->model = load_model("/home/main/Desktop/graphics/CGraphics/models/3.glb");
+	e1->model = load_model("./models/3.glb");
 	add_to_group(&all, e1);
 	e1->model->rotation[0]=1;
 	e1->model->position[0]=-10;
