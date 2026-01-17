@@ -265,8 +265,8 @@ model * load_model(char * filename){
                                 cgltf_accessor_read_float(chan->sampler->output, i1, scale, 3);
                                 float mat[16] = scale_mat(scale);
                                 float out_mat[16] = {0};
-                                matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
-                                //matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
+                                //matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
                                 memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
                             }
                         }
@@ -285,8 +285,8 @@ model * load_model(char * filename){
                                 float mat[16];
                                 rot_mat(mat, rot);
                                 float out_mat[16] = {0};
-                                matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
-                                //matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
+                                //matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
                                 memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
                             }
                         }
@@ -304,8 +304,8 @@ model * load_model(char * filename){
                                 cgltf_accessor_read_float(chan->sampler->output, i1, scale, 3);
                                 float mat[16] = tran_mat(scale);
                                 float out_mat[16] = {0};
-                                matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
-                                //matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
+                                //matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
                                 memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
                             }
                         }
@@ -314,14 +314,14 @@ model * load_model(char * filename){
                 //make em global
                 globalize_node(data->skins[0].joints[0]);
                 //make em full
-                // for(size_t k = 0; k<data->skins[0].joints_count; k++){
-                //     float mat[16];
-                //     float inv_mat[16];
-                //     cgltf_accessor_read_float(data->skins[0].inverse_bind_matrices, k, inv_mat, 16);
-                //     //matmul(data->skins[0].joints[k]->matrix,inv_mat,mat,4,4,4);
-                //     matmul(inv_mat,data->skins[0].joints[k]->matrix,mat,4,4,4); //swapped
-                //     memcpy(data->skins[0].joints[k]->matrix, mat, 16*sizeof(float));
-                // }
+                for(size_t k = 0; k<data->skins[0].joints_count; k++){
+                    float mat[16];
+                    float inv_mat[16];
+                    cgltf_accessor_read_float(data->skins[0].inverse_bind_matrices, k, inv_mat, 16);
+                    //matmul(data->skins[0].joints[k]->matrix,inv_mat,mat,4,4,4);
+                    matmul(inv_mat,data->skins[0].joints[k]->matrix,mat,4,4,4); //swapped
+                    memcpy(data->skins[0].joints[k]->matrix, mat, 16*sizeof(float));
+                }
                 //copy to array;
                 for(size_t k = 0; k<data->skins[0].joints_count; k++){
                     memcpy(&m->anims[i].frames[j*m->num_bones+k], data->skins[0].joints[k]->matrix, 16*sizeof(float));
@@ -416,5 +416,5 @@ void init(){
 	add_to_group(&all, e1);
 	e1->model->rotation[0]=1;
 	e1->model->position[0]=-10;
-	load_frame(e1->model, 0, 1);
+	load_frame(e1->model, 0, 0);
 }

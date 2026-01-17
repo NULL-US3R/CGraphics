@@ -5,8 +5,8 @@ layout(location = 2) in ivec4 bone_id;
 layout(location = 3) in vec4 bone_weight;
 
 layout(std430, binding = 1) buffer bones {
-( row ) mat4 bone_mat[];
-} ;
+    layout(row_major) mat4 bone_mat[];
+};
 
 layout(location = 0) uniform ivec2 resolution;
 layout(location = 3) uniform mat3 rotation;
