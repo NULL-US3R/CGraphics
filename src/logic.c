@@ -13,77 +13,124 @@ camera cam1 = {0};
 
 uint64_t current_actions = 0;
 
-typedef struct node_float{
-    float val;
-    struct node_float * chil[2];
-}node_float;
-
 void add_node_float(node_float * root, float val){
-    if(val!=root->val){
-        if(val<root->val){
-            if(root->chil[0]==NULL){
-                root->chil[0] = malloc(sizeof(node_float));
-                root->chil[0]->val = val;
-                root->chil[0]->chil[0] = root->chil[0]->chil[1] = NULL;
-            }else{
-                add_node_float(root->chil[0],val);
+    if(root->size==0){
+        root->size=1;
+        root->val=val;
+    }else{
+        if(val!=root->val){
+            if(val<root->val){
+                if(root->chil[0]==NULL){
+                    root->chil[0] = malloc(sizeof(node_float));
+                    root->chil[0]->val = val;
+                    root->chil[0]->size = 1;
+                    root->chil[0]->chil[0] = root->chil[0]->chil[1] = NULL;
+                }else{
+                    add_node_float(root->chil[0],val);
+                }
             }
-        }
-        if(val>root->val){
-            if(root->chil[1]==NULL){
-                root->chil[1] = malloc(sizeof(node_float));
-                root->chil[1]->val = val;
-                root->chil[1]->chil[0] = root->chil[0]->chil[1] = NULL;
-            }else{
-                add_node_float(root->chil[1],val);
+            if(val>root->val){
+                if(root->chil[1]==NULL){
+                    root->chil[1] = malloc(sizeof(node_float));
+                    root->chil[1]->val = val;
+                    root->chil[1]->size = 1;
+                    root->chil[1]->chil[0] = root->chil[1]->chil[1] = NULL;
+                }else{
+                    add_node_float(root->chil[1],val);
+                }
+            }
+            root->size++;
+            root->size=1;
+            if(root->chil[0]!=NULL){
+                root->size+=root->chil[0]->size;
+            }
+            if(root->chil[1]!=NULL){
+                root->size+=root->chil[1]->size;
             }
         }
     }
 }
 
-void mmul4(float * a, float * b, float * o){
-	for(size_t r=0; r<4; r++){
-		for(size_t c=0; c<4; c++){
-			o[4*r+c] = 0;
-			for(size_t m=0; m<4; m++){
-				o[4*r+c] += a[4*r+m]*b[4*m+c];
+size_t node_float_to_arr(node_float * root, float * arr, size_t ind){
+    if (root == NULL) {
+        return ind;
+    }
+    if(root->chil[0]!=NULL){
+        ind = node_float_to_arr(root->chil[0], arr, ind);
+    }
+    arr[ind] = root->val;
+    ind++;
+    if(root->chil[1]!=NULL){
+        ind = node_float_to_arr(root->chil[1], arr, ind);
+    }
+    return ind;
+}
+
+void free_node_float(node_float * root){
+    if(root->chil[0]!=NULL){
+        free_node_float(root->chil[0]);
+    }
+    if(root->chil[0]!=NULL){
+        free_node_float(root->chil[1]);
+    }
+    free(root);
+}
+
+void matmul(float * a, float * b, float * o, size_t sr, size_t sm, size_t sc){
+	for(size_t r=0; r<sr; r++){
+		for(size_t c=0; c<sc; c++){
+			o[sc*r+c] = 0;
+			for(size_t m=0; m<sm; m++){
+				o[sc*r+c] += a[sm*r+m]*b[sc*m+c];
 			}
 		}
 	}
 }
 
-void print_node(cgltf_node * root, size_t tabs){
-    // for(size_t i=0; i<tabs; i++){
-    //     printf(" ");
-    // }
-    printf("%.20s ",root->name);
-    if(root->has_matrix){
-        printf("+matrix ");
+void globalize_node(cgltf_node * root){
+    if(root->parent!=NULL){
+        float mat[16];
+        matmul(root->parent->matrix,root->matrix,mat,4,4,4);
+        memcpy(root->matrix, mat, 16*sizeof(float));
     }
-    if(root->has_rotation){
-        printf("+rotation ");
-    }
-    if(root->has_translation){
-        printf("+translat ");
-    }
-    if(root->has_scale){
-        printf("+scale ");
-    }
-    printf("\n");
-    // for(size_t i=0; i<4; i++){
-    //     for(size_t j=0; j<tabs; j++){
-    //         printf(" ");
-    //     }
-    //     for(size_t j=0; j<4; j++){
-    //         printf("%.3f ",root->matrix[i*4+j]);
-    //     }
-    //     printf("\n");
-    // }
-
     for(size_t i=0; i<root->children_count; i++){
-        print_node(root->children[i],tabs+1);
+        globalize_node(root->children[i]);
     }
+}
 
+#define scale_mat(scale){\
+    scale[0],0,0,0,\
+    0,scale[1],0,0,\
+    0,0,scale[2],0,\
+    0,0,0,1\
+}
+
+#define tran_mat(tran){\
+    1,0,0,0,\
+    0,1,0,0,\
+    0,0,1,0,\
+    tran[0],tran[1],tran[2],1\
+}
+
+void rot_mat(float * out, float rot[4]){
+    float qr = rot[0];
+    float qi = rot[1];
+    float qj = rot[2];
+    float qk = rot[3];
+    float qr2 = qr*qr;
+    float qi2 = qi*qi;
+    float qj2 = qj*qj;
+    float qk2 = qk*qk;
+
+    float s = fsqrt(qr2+qi2+qj2+qk2);
+    s = 1./(s*s);
+    float mat_out[16] = {
+        1-2*s*(qj2+qk2),2*s*(qi*qj-qk*qr),2*s*(qi*qk-qj*qr),0,
+        2*s*(qi*qj-qk*qr),1-2*s*(qi2+qk2),2*s*(qj*qk-qi*qr),0,
+        2*s*(qi*qk-qj*qr),2*s*(qj*qk-qi*qr),1-2*s*(qi2+qj2),0,
+        0,0,0,1
+    };
+    memcpy(out, mat_out, 16*sizeof(float));
 }
 
 model * load_model(char * filename){
@@ -152,13 +199,17 @@ model * load_model(char * filename){
         m->texture_src = img;
     }
 
-
-
     //walk through joints and compute matrices for animations
     if(data->animations_count>0){
         //get all timestamps
+        m->num_bones = data->skins[0].joints_count;
+        m->anim_count = data->animations_count;
+        m->anims = malloc(m->anim_count*sizeof(animation));
+        memset(m->anims,0,m->anim_count*sizeof(animation));
         for(size_t i=0; i<data->animations_count; i++){
             cgltf_animation * anim = &data->animations[i];
+            node_float * set = malloc(sizeof(node_float));
+            memset(set,0,sizeof(node_float));
             for(size_t j=0; j<anim->channels_count; j++){
                 cgltf_animation_channel * chan = &anim->channels[j];
                 size_t numt = chan->sampler->input->count;
@@ -166,19 +217,96 @@ model * load_model(char * filename){
 
                 cgltf_accessor_unpack_floats(chan->sampler->input, times, numt);
                 for(size_t k=0; k<numt; k++){
-                    //add to set times[k];
+                    add_node_float(set, times[k]);
+                }
+            }
+            m->anims[i].num_frames = set->size;
+            m->anims[i].timestamps = malloc(set->size*sizeof(float));
+            node_float_to_arr(set, m->anims[i].timestamps, 0);
+            free_node_float(set);
+            m->anims[i].frames = malloc(m->anims[i].num_frames*m->num_bones*16*sizeof(float));
+            for(size_t j=0; j<m->anims[i].num_frames; j++){
+                //reset
+                float mat_one[16] = {
+                    1,0,0,0,
+                    0,1,0,0,
+                    0,0,1,0,
+                    0,0,0,1
+                };
+                for(size_t k=0; k<data->skins[0].joints_count; k++){
+                    memcpy(data->skins[0].joints[k]->matrix, mat_one, 16*sizeof(float));
+                }
+                //scale
+                for(size_t k=0; k<anim->channels_count; k++){
+                    cgltf_animation_channel * chan = &anim->channels[k];
+                    if(chan->target_path == cgltf_animation_path_type_scale){
+                        float stamps[chan->sampler->input->count];
+                        cgltf_accessor_unpack_floats(chan->sampler->input, stamps, chan->sampler->input->count);
+                        for(size_t i1=0; i1<chan->sampler->input->count; i1++){
+                            if(stamps[i1]==m->anims[i].timestamps[j]){
+                                float scale[3];
+                                cgltf_accessor_read_float(chan->sampler->output, i, scale, 3);
+                                float mat[16] = scale_mat(scale);
+                                float out_mat[16] = {0};
+                                matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
+                            }
+                        }
+                    }
+                }
+                //rotate
+                for(size_t k=0; k<anim->channels_count; k++){
+                    cgltf_animation_channel * chan = &anim->channels[k];
+                    if(chan->target_path == cgltf_animation_path_type_rotation){
+                        float stamps[chan->sampler->input->count];
+                        cgltf_accessor_unpack_floats(chan->sampler->input, stamps, chan->sampler->input->count);
+                        for(size_t i1=0; i1<chan->sampler->input->count; i1++){
+                            if(stamps[i1]==m->anims[i].timestamps[j]){
+                                float rot[4];
+                                cgltf_accessor_read_float(chan->sampler->output, i, rot, 4);
+                                float mat[16];
+                                rot_mat(mat, rot);
+                                float out_mat[16] = {0};
+                                matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
+                            }
+                        }
+                    }
+                }
+                //translate
+                for(size_t k=0; k<anim->channels_count; k++){
+                    cgltf_animation_channel * chan = &anim->channels[k];
+                    if(chan->target_path == cgltf_animation_path_type_translation){
+                        float stamps[chan->sampler->input->count];
+                        cgltf_accessor_unpack_floats(chan->sampler->input, stamps, chan->sampler->input->count);
+                        for(size_t i1=0; i1<chan->sampler->input->count; i1++){
+                            if(stamps[i1]==m->anims[i].timestamps[j]){
+                                float scale[3];
+                                cgltf_accessor_read_float(chan->sampler->output, i, scale, 3);
+                                float mat[16] = tran_mat(scale);
+                                float out_mat[16] = {0};
+                                matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
+                            }
+                        }
+                    }
+                }
+                //make em global
+                globalize_node(data->skins[0].joints[0]);
+                //make em full
+                for(size_t k = 0; k<data->skins[0].joints_count; k++){
+                    float mat[16];
+                    float inv_mat[16];
+                    cgltf_accessor_read_float(data->skins[0].inverse_bind_matrices, k, inv_mat, 16);
+                    matmul(data->skins[0].joints[k]->matrix,inv_mat,mat,4,4,4);
+                    memcpy(data->skins[0].joints[k]->matrix, mat, 16*sizeof(float));
+                }
+                //copy to array;
+                for(size_t k = 0; k<data->skins[0].joints_count; k++){
+                    memcpy(&m->anims[i].frames[j*m->num_bones+k], data->skins[0].joints[k]->matrix, 16*sizeof(float));
                 }
             }
         }
-
-
-        // for(size_t i=0; i<data->animations_count; i++){
-        //     cgltf_animation * anim = &data->animations[i];
-        //     for(size_t j=0; j<anim->channels_count; j++){
-        //         cgltf_animation_channel * chan = &anim->channels[j];
-        //         chan->sampler->
-        //     }
-        // }
     }
 
     cgltf_free(data);
@@ -201,17 +329,6 @@ void add_to_group(entity_group * group, entity * e){
 void update_group(entity_group * group){
 	for(size_t i=0; i<group->length; i++){
 		update(group->arr[i]);
-	}
-}
-
-void matmul(float * a, float * b, float * o, size_t sr, size_t sm, size_t sc){
-	for(size_t r=0; r<sr; r++){
-		for(size_t c=0; c<sc; c++){
-			o[sc*r+c] = 0;
-			for(size_t m=0; m<sm; m++){
-				o[sc*r+c] += a[sm*r+m]*b[sc*m+c];
-			}
-		}
 	}
 }
 
@@ -274,4 +391,22 @@ void init(){
 	add_to_group(&all, e1);
 	e1->model->rotation[0]=1;
 	e1->model->position[0]=-10;
+
+	node_float * set = malloc(sizeof(node_float));
+	memset(set,0,sizeof(node_float));
+	add_node_float(set, 3);
+	add_node_float(set, 4);
+	add_node_float(set, 2);
+	add_node_float(set, 15);
+	add_node_float(set, 6);
+	add_node_float(set, 11);
+	add_node_float(set, 12);
+	add_node_float(set, 11);
+	add_node_float(set, 11);
+	add_node_float(set, 5);
+	float arr[set->size];
+	node_float_to_arr(set, arr, 0);
+	for(size_t i=0; i<set->size; i++){
+	    printf("%f ",arr[i]);
+	}
 }

@@ -5,6 +5,15 @@
 #define CAM_RIGHT 0x4
 #define CAM_LEFT 0x8
 
+typedef struct node_float{
+    size_t size;
+    float val;
+    struct node_float * chil[2];
+}node_float;
+
+void add_node_float(node_float * root, float val);
+size_t node_float_to_arr(node_float * root, float * arr, size_t ind);
+void free_node_float(node_float * root);
 
 typedef struct p6image {
 	size_t w,h;
@@ -12,10 +21,10 @@ typedef struct p6image {
 } p6image;
 
 typedef struct animation{
-    size_t num_bones;
+    //size_t num_bones;
     size_t num_frames;
 	float (* frames)[4][4]; //кости во времени
-	int * timestamps; // 1 на каждый фрейм
+	float * timestamps; // 1 на каждый фрейм
 }animation;
 
 typedef struct model{

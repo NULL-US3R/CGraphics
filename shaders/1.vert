@@ -23,18 +23,11 @@ out vec2 oTexPos;
 void main() {
     float ar = float(resolution.y) / float(resolution.x);
     vec3 o = vertPos;
-    // o.yz = rot(o.yz, rotation.x);
-    // o.xz = rot(o.xz, rotation.y);
-    // o.xy = rot(o.xy, rotation.z);
 
     o = rotation * o;
 
     o += globalPosition - camPos;
 
-    // o.xz = rot(o.xz, -camRot.y);
-    // o.yz = rot(o.yz, -camRot.x);
-
-    // o.xy = rot(o.xy, -camRot.z);
     o = o * camRot;
     gl_Position = vec4(o.x, o.y / ar, -tanh(o.z), o.z);
     oPos = o;
