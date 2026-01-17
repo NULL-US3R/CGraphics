@@ -4,25 +4,42 @@ layout(location = 1) in vec2 texCrd;
 layout(location = 2) in ivec4 bone_id;
 layout(location = 3) in vec4 bone_weight;
 
+layout(std430, binding = 1) buffer bones {
+( row ) mat4 bone_mat[];
+} ;
+
 layout(location = 0) uniform ivec2 resolution;
 layout(location = 3) uniform mat3 rotation;
 layout(location = 4) uniform vec3 globalPosition;
 layout(location = 5) uniform vec3 camPos;
 layout(location = 6) uniform mat3 camRot;
+layout(location = 7) uniform int hasBones;
 
 out vec3 oPos;
 out vec2 oTexPos;
 
-//x*sin(b)+y*cos(b)
-//x*cos(b)-y*sin(b)
-
-// vec2 rot(vec2 uv, float a) {
-//     return vec2(uv.x * cos(a) - uv.y * sin(a), uv.x * sin(a) + uv.y * cos(a));
-// }
-
 void main() {
     float ar = float(resolution.y) / float(resolution.x);
     vec3 o = vertPos;
+
+    if (hasBones != 0) {
+        mat4 skin = mat4(0);
+        if (bone_id.x >= 0) {
+            skin += bone_weight.x * bone_mat[bone_id.x];
+        }
+        if (bone_id.y >= 0) {
+            skin += bone_weight.y * bone_mat[bone_id.y];
+        }
+        if (bone_id.z >= 0) {
+            skin += bone_weight.z * bone_mat[bone_id.z];
+        }
+        if (bone_id.w >= 0) {
+            skin += bone_weight.w * bone_mat[bone_id.w];
+        }
+        vec4 to = vec4(o, 1);
+        to = skin * to;
+        o = to.xyz;
+    }
 
     o = rotation * o;
 

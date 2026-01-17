@@ -90,7 +90,8 @@ void matmul(float * a, float * b, float * o, size_t sr, size_t sm, size_t sc){
 void globalize_node(cgltf_node * root){
     if(root->parent!=NULL){
         float mat[16];
-        matmul(root->parent->matrix,root->matrix,mat,4,4,4);
+        //matmul(root->parent->matrix,root->matrix,mat,4,4,4);
+        matmul(root->matrix,root->parent->matrix,mat,4,4,4); //swapped
         memcpy(root->matrix, mat, 16*sizeof(float));
     }
     for(size_t i=0; i<root->children_count; i++){
@@ -113,10 +114,10 @@ void globalize_node(cgltf_node * root){
 }
 
 void rot_mat(float * out, float rot[4]){
-    float qr = rot[0];
-    float qi = rot[1];
-    float qj = rot[2];
-    float qk = rot[3];
+    float qi = rot[0];
+    float qj = rot[1];
+    float qk = rot[2];
+    float qr = rot[3];
     float qr2 = qr*qr;
     float qi2 = qi*qi;
     float qj2 = qj*qj;
@@ -166,8 +167,16 @@ model * load_model(char * filename){
         if(p->attributes[i].type == cgltf_attribute_type_joints){
             cgltf_accessor * acc = p->attributes[i].data;
             m->bone_id_length = acc->count*4;
-            m->bone_ids = malloc(m->bone_id_length*sizeof(int));
-            cgltf_accessor_unpack_indices(acc, m->bone_ids, sizeof(int), m->bone_id_length);
+            m->bone_ids = malloc(m->bone_id_length * sizeof(int));
+
+            for(size_t j = 0; j < acc->count; j++) {
+                cgltf_uint tmp[4];
+                cgltf_accessor_read_uint(acc, j, tmp, 4); // Correct way to read VEC4 joints
+                m->bone_ids[j * 4 + 0] = (int)tmp[0];
+                m->bone_ids[j * 4 + 1] = (int)tmp[1];
+                m->bone_ids[j * 4 + 2] = (int)tmp[2];
+                m->bone_ids[j * 4 + 3] = (int)tmp[3];
+            }
         }
         if(p->attributes[i].type == cgltf_attribute_type_weights){
             cgltf_accessor * acc = p->attributes[i].data;
@@ -203,6 +212,14 @@ model * load_model(char * filename){
     if(data->animations_count>0){
         //get all timestamps
         m->num_bones = data->skins[0].joints_count;
+        m->bones = malloc(m->num_bones*16*sizeof(float));
+        memset(m->bones, 0, m->num_bones*16*sizeof(float));
+        for(size_t i=0; i<m->num_bones; i++){
+            m->bones[i * 16 + 0] = 1.0f;
+            m->bones[i * 16 + 5] = 1.0f;
+            m->bones[i * 16 + 10] = 1.0f;
+            m->bones[i * 16 + 15] = 1.0f;
+        }
         m->anim_count = data->animations_count;
         m->anims = malloc(m->anim_count*sizeof(animation));
         memset(m->anims,0,m->anim_count*sizeof(animation));
@@ -245,10 +262,11 @@ model * load_model(char * filename){
                         for(size_t i1=0; i1<chan->sampler->input->count; i1++){
                             if(stamps[i1]==m->anims[i].timestamps[j]){
                                 float scale[3];
-                                cgltf_accessor_read_float(chan->sampler->output, i, scale, 3);
+                                cgltf_accessor_read_float(chan->sampler->output, i1, scale, 3);
                                 float mat[16] = scale_mat(scale);
                                 float out_mat[16] = {0};
                                 matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                //matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
                                 memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
                             }
                         }
@@ -263,11 +281,12 @@ model * load_model(char * filename){
                         for(size_t i1=0; i1<chan->sampler->input->count; i1++){
                             if(stamps[i1]==m->anims[i].timestamps[j]){
                                 float rot[4];
-                                cgltf_accessor_read_float(chan->sampler->output, i, rot, 4);
+                                cgltf_accessor_read_float(chan->sampler->output, i1, rot, 4);
                                 float mat[16];
                                 rot_mat(mat, rot);
                                 float out_mat[16] = {0};
                                 matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                //matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
                                 memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
                             }
                         }
@@ -282,10 +301,11 @@ model * load_model(char * filename){
                         for(size_t i1=0; i1<chan->sampler->input->count; i1++){
                             if(stamps[i1]==m->anims[i].timestamps[j]){
                                 float scale[3];
-                                cgltf_accessor_read_float(chan->sampler->output, i, scale, 3);
+                                cgltf_accessor_read_float(chan->sampler->output, i1, scale, 3);
                                 float mat[16] = tran_mat(scale);
                                 float out_mat[16] = {0};
                                 matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                //matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
                                 memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
                             }
                         }
@@ -294,13 +314,14 @@ model * load_model(char * filename){
                 //make em global
                 globalize_node(data->skins[0].joints[0]);
                 //make em full
-                for(size_t k = 0; k<data->skins[0].joints_count; k++){
-                    float mat[16];
-                    float inv_mat[16];
-                    cgltf_accessor_read_float(data->skins[0].inverse_bind_matrices, k, inv_mat, 16);
-                    matmul(data->skins[0].joints[k]->matrix,inv_mat,mat,4,4,4);
-                    memcpy(data->skins[0].joints[k]->matrix, mat, 16*sizeof(float));
-                }
+                // for(size_t k = 0; k<data->skins[0].joints_count; k++){
+                //     float mat[16];
+                //     float inv_mat[16];
+                //     cgltf_accessor_read_float(data->skins[0].inverse_bind_matrices, k, inv_mat, 16);
+                //     //matmul(data->skins[0].joints[k]->matrix,inv_mat,mat,4,4,4);
+                //     matmul(inv_mat,data->skins[0].joints[k]->matrix,mat,4,4,4); //swapped
+                //     memcpy(data->skins[0].joints[k]->matrix, mat, 16*sizeof(float));
+                // }
                 //copy to array;
                 for(size_t k = 0; k<data->skins[0].joints_count; k++){
                     memcpy(&m->anims[i].frames[j*m->num_bones+k], data->skins[0].joints[k]->matrix, 16*sizeof(float));
@@ -311,6 +332,10 @@ model * load_model(char * filename){
 
     cgltf_free(data);
     return m;
+}
+
+void load_frame(model * m, size_t id_anim, size_t id_frame){
+    memcpy(m->bones, m->anims[id_anim].frames[id_frame*m->num_bones*16], m->num_bones*16*sizeof(float));
 }
 
 void add_to_group(entity_group * group, entity * e){
@@ -391,22 +416,5 @@ void init(){
 	add_to_group(&all, e1);
 	e1->model->rotation[0]=1;
 	e1->model->position[0]=-10;
-
-	node_float * set = malloc(sizeof(node_float));
-	memset(set,0,sizeof(node_float));
-	add_node_float(set, 3);
-	add_node_float(set, 4);
-	add_node_float(set, 2);
-	add_node_float(set, 15);
-	add_node_float(set, 6);
-	add_node_float(set, 11);
-	add_node_float(set, 12);
-	add_node_float(set, 11);
-	add_node_float(set, 11);
-	add_node_float(set, 5);
-	float arr[set->size];
-	node_float_to_arr(set, arr, 0);
-	for(size_t i=0; i<set->size; i++){
-	    printf("%f ",arr[i]);
-	}
+	load_frame(e1->model, 0, 1);
 }

@@ -29,13 +29,13 @@ typedef struct animation{
 
 typedef struct model{
 	p6image * texture_src;
-	GLuint vao, prog; //если не знаешь что это - не трогай
+	GLuint vao, prog, bones_buf; //если не знаешь что это - не трогай
 	size_t verts_length, faces_length, tex_length,bone_id_length,bone_weight_length;
 	float * verts, * tex;
 	int * bone_ids; // ivec4[]
 	float * bone_weights; // vec4[]
 	size_t num_bones;
-	float (* bones)[4][4];
+	float * bones;
 	size_t anim_count;
 	animation * anims;
 	unsigned int * faces, texture;

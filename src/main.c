@@ -102,6 +102,23 @@ void load_model_to_gpu(model * m){
 
 	glGenVertexArrays(1,&m->vao);
 	glBindVertexArray(m->vao);
+
+	GLuint vbo_ids, vbo_wgts;
+	glGenBuffers(1,&vbo_ids);
+	glGenBuffers(1,&vbo_wgts);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_ids);
+	glBufferData(GL_ARRAY_BUFFER, m->bone_id_length*sizeof(int), m->bone_ids, GL_STATIC_DRAW);
+
+	glVertexAttribIPointer(2, 4, GL_INT, GL_FALSE, 0);
+	glEnableVertexAttribArray(2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_wgts);
+	glBufferData(GL_ARRAY_BUFFER, m->bone_weight_length*sizeof(float), m->bone_weights, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(3);
+
 	GLuint vbo, ebo, tex;
 	glGenBuffers(1,&vbo);
 	glGenBuffers(1,&ebo);
@@ -125,6 +142,12 @@ void load_model_to_gpu(model * m){
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	glGenBuffers(1, &m->bones_buf);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m->bones_buf);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, m->num_bones*16*sizeof(float),m->bones, GL_STATIC_DRAW);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
 
 }
 
@@ -174,6 +197,12 @@ void draw_model(model * m){
 	memcpy(zmat, mat, 9*sizeof(float));
 	matmul(xmat,zmat,mat,3,3,3);
 
+	if(m->num_bones==0){
+	    glUniform1i(7,0);
+	}else{
+	    glUniform1i(7,1);
+	}
+
 	glUniformMatrix3fv(3,1,0,mat);
 
 	glUniform3f(4,m->position[0],m->position[1],m->position[2]);
@@ -181,7 +210,16 @@ void draw_model(model * m){
 	glUniform3f(5,cam1.position[0],cam1.position[1],cam1.position[2]);
 	//glUniform3f(6,cam1.rotation[0],cam1.rotation[1],cam1.rotation[2]);
 	glUniformMatrix3fv(6,1,0,cam1.rot_mat);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER,m->bones_buf);
+
+	void *_dst = glMapBuffer(GL_SHADER_STORAGE_BUFFER,GL_READ_WRITE);
+	memcpy(_dst, m->bones, m->num_bones*16*sizeof(float));
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m->bones_buf);
 	glDrawElements(GL_TRIANGLES, m->faces_length, GL_UNSIGNED_INT, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glBindVertexArray(0);
 }
 
