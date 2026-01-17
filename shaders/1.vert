@@ -24,17 +24,20 @@ void main() {
 
     if (hasBones != 0) {
         mat4 skin = mat4(0);
+
+        vec4 tw = bone_weight;
+        //tw = normalize(tw);
         if (bone_id.x >= 0) {
-            skin += bone_weight.x * bone_mat[bone_id.x];
+            skin += tw.x * bone_mat[bone_id.x];
         }
         if (bone_id.y >= 0) {
-            skin += bone_weight.y * bone_mat[bone_id.y];
+            skin += tw.y * bone_mat[bone_id.y];
         }
         if (bone_id.z >= 0) {
-            skin += bone_weight.z * bone_mat[bone_id.z];
+            skin += tw.z * bone_mat[bone_id.z];
         }
         if (bone_id.w >= 0) {
-            skin += bone_weight.w * bone_mat[bone_id.w];
+            skin += tw.w * bone_mat[bone_id.w];
         }
         vec4 to = vec4(o, 1);
         to = skin * to;

@@ -35,7 +35,7 @@ typedef struct model{
 	int * bone_ids; // ivec4[]
 	float * bone_weights; // vec4[]
 	size_t num_bones;
-	float * bones;
+	float (* bones)[4][4];
 	size_t anim_count;
 	animation * anims;
 	unsigned int * faces, texture;

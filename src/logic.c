@@ -126,9 +126,9 @@ void rot_mat(float * out, float rot[4]){
     float s = fsqrt(qr2+qi2+qj2+qk2);
     s = 1./(s*s);
     float mat_out[16] = {
-        1-2*s*(qj2+qk2),2*s*(qi*qj-qk*qr),2*s*(qi*qk-qj*qr),0,
-        2*s*(qi*qj-qk*qr),1-2*s*(qi2+qk2),2*s*(qj*qk-qi*qr),0,
-        2*s*(qi*qk-qj*qr),2*s*(qj*qk-qi*qr),1-2*s*(qi2+qj2),0,
+        1-2*s*(qj2+qk2),2*s*(qi*qj+qk*qr),2*s*(qi*qk-qj*qr),0,
+        2*s*(qi*qj-qk*qr),1-2*s*(qi2+qk2),2*s*(qj*qk+qi*qr),0,
+        2*s*(qi*qk+qj*qr),2*s*(qj*qk-qi*qr),1-2*s*(qi2+qj2),0,
         0,0,0,1
     };
     memcpy(out, mat_out, 16*sizeof(float));
@@ -215,10 +215,11 @@ model * load_model(char * filename){
         m->bones = malloc(m->num_bones*16*sizeof(float));
         memset(m->bones, 0, m->num_bones*16*sizeof(float));
         for(size_t i=0; i<m->num_bones; i++){
-            m->bones[i * 16 + 0] = 1.0f;
-            m->bones[i * 16 + 5] = 1.0f;
-            m->bones[i * 16 + 10] = 1.0f;
-            m->bones[i * 16 + 15] = 1.0f;
+            m->bones[i][0][0] = 1.0f;
+            m->bones[i][1][1] = 1.0f;
+            m->bones[i][2][2] = 1.0f;
+            m->bones[i][3][3] = 1.0f;
+
         }
         m->anim_count = data->animations_count;
         m->anims = malloc(m->anim_count*sizeof(animation));
@@ -265,8 +266,8 @@ model * load_model(char * filename){
                                 cgltf_accessor_read_float(chan->sampler->output, i1, scale, 3);
                                 float mat[16] = scale_mat(scale);
                                 float out_mat[16] = {0};
-                                //matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
-                                matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
+                                matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                //matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
                                 memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
                             }
                         }
@@ -285,8 +286,8 @@ model * load_model(char * filename){
                                 float mat[16];
                                 rot_mat(mat, rot);
                                 float out_mat[16] = {0};
-                                //matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
-                                matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
+                                matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                //matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
                                 memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
                             }
                         }
@@ -304,8 +305,8 @@ model * load_model(char * filename){
                                 cgltf_accessor_read_float(chan->sampler->output, i1, scale, 3);
                                 float mat[16] = tran_mat(scale);
                                 float out_mat[16] = {0};
-                                //matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
-                                matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
+                                matmul(mat,chan->target_node->matrix,out_mat,4,4,4);
+                                //matmul(chan->target_node->matrix,mat,out_mat,4,4,4); //swapped
                                 memcpy(chan->target_node->matrix,out_mat,16*sizeof(float));
                             }
                         }
@@ -416,5 +417,5 @@ void init(){
 	add_to_group(&all, e1);
 	e1->model->rotation[0]=1;
 	e1->model->position[0]=-10;
-	load_frame(e1->model, 0, 0);
+	load_frame(e1->model, 0, 1);
 }
